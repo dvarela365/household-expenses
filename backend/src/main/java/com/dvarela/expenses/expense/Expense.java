@@ -17,6 +17,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+
 
 @Entity
 @Table(name = "expense")
@@ -49,6 +51,11 @@ public class Expense {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Version
+    private Long version;
+
+
+
     protected Expense() {
         // required by JPA
     }
@@ -64,6 +71,17 @@ public class Expense {
         this.createdAt = Instant.now();
     }
 
+    // ... método de negocio:
+    public void update(BigDecimal amount, LocalDate date, Category category,
+                       PaymentMethod paymentMethod, String merchant, String note) {
+        this.amount = amount;
+        this.date = date;
+        this.category = category;
+        this.paymentMethod = paymentMethod;
+        this.merchant = merchant;
+        this.note = note;
+    }
+
     public Long getId() { return id; }
     public BigDecimal getAmount() { return amount; }
     public LocalDate getDate() { return date; }
@@ -72,4 +90,5 @@ public class Expense {
     public String getMerchant() { return merchant; }
     public String getNote() { return note; }
     public Instant getCreatedAt() { return createdAt; }
+    public Long getVersion() { return version; }
 }

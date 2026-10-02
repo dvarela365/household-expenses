@@ -3,6 +3,7 @@ package com.dvarela.expenses.expense;
 import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,5 +49,31 @@ public class ExpenseService {
                 .toList();
 
         return new MonthlyExpensesResponse(month, total, items);
+    }
+
+    @Transactional
+    public ExpenseResponse update(Long id, UpdateExpenseRequest request) {
+        Expense expense = expenseRepository.findById(id)
+                .orElseThrow(() -> new ExpenseNotFoundException(id));
+
+        if (!Objects.equals(expense.getVersion(), request.version())) {
+            throw new ExpenseConflictException(id);
+        }
+
+        Category category = categoryRepository.findById(request.categoryId())
+                .orElseThrow(() -> new CategoryNotFoundException(request.categoryId()));
+
+        expense.update(request.amount(), request.date(), category,
+                request.paymentMethod(), request.merchant(), request.note());
+
+        expenseRepository.flush();
+        return ExpenseResponse.from(expense);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        Expense expense = expenseRepository.findById(id)
+                .orElseThrow(() -> new ExpenseNotFoundException(id));
+        expenseRepository.delete(expense);
     }
 }
