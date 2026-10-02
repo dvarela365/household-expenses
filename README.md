@@ -38,7 +38,7 @@ Code is organized by feature, not by layer.
 ## Roadmap
 
 - [x] **Phase 0** - Project skeleton, PostgreSQL in Docker, UTC, Git
-- [ ] **Slice 1 - MVP:** record an expense and see the current month
+- [x] **Slice 1 - MVP:** record an expense and see the current month
   - [x] Category: migrations, entity, repository, integration tests
   - [x] Expense: migration, entity, period query, integration tests
   - [x] Service layer with unit tests (Mockito)
@@ -53,3 +53,10 @@ Code is organized by feature, not by layer.
 ## Architecture decisions
 
 See [`docs/decisions`](docs/decisions).
+
+## Screenshots
+
+<p>
+  <img src="docs/screenshots/main.png" alt="Monthly view with total, spending breakdown and expenses grouped by day" width="300">
+  <img src="docs/screenshots/quick-entry.png" alt="Quick expense entry form" width="300">
+</p>
