@@ -8,5 +8,5 @@ import jakarta.validation.constraints.Size;
 public record CategoryRequest(
         @NotBlank @Size(max = 50) String name,
         @NotNull CategoryKind kind,
-        @NotNull @Pattern(regexp = CategoryIcons.PATTERN) String icon) {
+        @NotNull @Pattern(regexp = CategoryIcons.PATTERN, message = "is not an allowed icon") String icon) {
 }

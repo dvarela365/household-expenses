@@ -2,10 +2,9 @@ package com.dvarela.expenses.category;
 
 import java.util.List;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/categories")
@@ -21,5 +20,32 @@ public class CategoryController {
     public List<CategoryResponse> findAll(
             @RequestParam(defaultValue = "false") boolean includeArchived) {
         return categoryService.findAll(includeArchived);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public CategoryResponse create(@Valid @RequestBody CategoryRequest request) {
+        return categoryService.create(request);
+    }
+
+    @PutMapping("/{id}")
+    public CategoryResponse update(@PathVariable Long id, @Valid @RequestBody CategoryRequest request) {
+        return categoryService.update(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        categoryService.delete(id);
+    }
+
+    @PostMapping("/{id}/archive")
+    public CategoryResponse archive(@PathVariable Long id) {
+        return categoryService.archive(id);
+    }
+
+    @PostMapping("/{id}/unarchive")
+    public CategoryResponse unarchive(@PathVariable Long id) {
+        return categoryService.unarchive(id);
     }
 }
