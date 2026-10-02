@@ -2,9 +2,7 @@ package com.dvarela.expenses.expense;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -34,7 +32,7 @@ class ExpenseControllerTest {
     void register_returns201WithTheCreatedExpense() {
         when(expenseService.register(any())).thenReturn(new ExpenseResponse(
                 1L, new BigDecimal("15300.50"), LocalDate.of(2026, 10, 1),
-                1L, "Supermercado", "shopping-cart", PaymentMethod.DEBIT, "Coto", null));
+                1L, "Supermercado", "shopping-cart", PaymentMethod.DEBIT, "Coto", null, 0L));
 
         assertThat(mvc.post().uri("/api/expenses")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -81,5 +79,62 @@ class ExpenseControllerTest {
         assertThat(mvc.get().uri("/api/expenses?month=2026-10"))
                 .hasStatusOk()
                 .bodyJson().extractingPath("$.month").isEqualTo("2026-10");
+    }
+
+    @Test
+    void update_returns200WithTheUpdatedExpense() {
+        when(expenseService.update(eq(10L), any())).thenReturn(new ExpenseResponse(
+                10L, new BigDecimal("999.99"), LocalDate.of(2026, 10, 3),
+                3L, "Delivery", "bike", PaymentMethod.CASH, "Rappi", null, 4L));
+
+        assertThat(mvc.put().uri("/api/expenses/10")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"amount": 999.99, "date": "2026-10-03", "categoryId": 3,
+                     "paymentMethod": "CASH", "merchant": "Rappi", "version": 3}
+                    """))
+                .hasStatusOk()
+                .bodyJson().extractingPath("$.version").isEqualTo(4);
+    }
+
+    @Test
+    void update_returns409WhenTheVersionIsStale() {
+        when(expenseService.update(eq(10L), any())).thenThrow(new ExpenseConflictException(10L));
+
+        assertThat(mvc.put().uri("/api/expenses/10")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"amount": 100, "date": "2026-10-01", "categoryId": 1,
+                     "paymentMethod": "CASH", "version": 3}
+                    """))
+                .hasStatus(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void update_returns400WhenTheVersionIsMissing() {
+        assertThat(mvc.put().uri("/api/expenses/10")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"amount": 100, "date": "2026-10-01", "categoryId": 1, "paymentMethod": "CASH"}
+                    """))
+                .hasStatus(HttpStatus.BAD_REQUEST)
+                .bodyJson().extractingPath("$.errors.version").isNotNull();
+    }
+
+    @Test
+    void delete_returns204() {
+        assertThat(mvc.delete().uri("/api/expenses/10"))
+                .hasStatus(HttpStatus.NO_CONTENT);
+
+        verify(expenseService).delete(10L);
+    }
+
+    @Test
+    void delete_returns404WhenTheExpenseDoesNotExist() {
+        doThrow(new ExpenseNotFoundException(99L)).when(expenseService).delete(99L);
+
+        assertThat(mvc.delete().uri("/api/expenses/99"))
+                .hasStatus(HttpStatus.NOT_FOUND)
+                .bodyJson().extractingPath("$.title").isEqualTo("Expense not found");
     }
 }

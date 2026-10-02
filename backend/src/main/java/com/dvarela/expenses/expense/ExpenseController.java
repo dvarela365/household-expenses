@@ -3,13 +3,7 @@ package com.dvarela.expenses.expense;
 import java.time.YearMonth;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
@@ -32,5 +26,17 @@ public class ExpenseController {
     @GetMapping
     public MonthlyExpensesResponse findByMonth(@RequestParam YearMonth month) {
         return expenseService.findByMonth(month);
+    }
+
+    @PutMapping("/{id}")
+    public ExpenseResponse update(@PathVariable Long id,
+                                  @Valid @RequestBody UpdateExpenseRequest request) {
+        return expenseService.update(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable Long id) {
+        expenseService.delete(id);
     }
 }

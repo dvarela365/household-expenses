@@ -3,6 +3,9 @@ package com.dvarela.expenses.api;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.dvarela.expenses.expense.ExpenseConflictException;
+import com.dvarela.expenses.expense.ExpenseNotFoundException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
@@ -33,6 +36,21 @@ public class ApiExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(
                 HttpStatusCode.valueOf(422), ex.getMessage());
         problem.setTitle("Category not found");
+        return problem;
+    }
+
+    @ExceptionHandler(ExpenseNotFoundException.class)
+    ProblemDetail handleExpenseNotFound(ExpenseNotFoundException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Expense not found");
+        return problem;
+    }
+
+    @ExceptionHandler({ExpenseConflictException.class, OptimisticLockingFailureException.class})
+    ProblemDetail handleConflict(RuntimeException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "The expense was modified by someone else. Reload it and try again.");
+        problem.setTitle("Expense modified concurrently");
         return problem;
     }
 }

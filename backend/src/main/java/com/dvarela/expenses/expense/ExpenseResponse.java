@@ -12,7 +12,8 @@ public record ExpenseResponse(
         String categoryIcon,
         PaymentMethod paymentMethod,
         String merchant,
-        String note) {
+        String note,
+        Long version) {
 
     static ExpenseResponse from(Expense expense) {
         return new ExpenseResponse(
@@ -24,6 +25,7 @@ public record ExpenseResponse(
                 expense.getCategory().getIcon(),
                 expense.getPaymentMethod(),
                 expense.getMerchant(),
-                expense.getNote());
+                expense.getNote(),
+                expense.getVersion());
     }
 }
