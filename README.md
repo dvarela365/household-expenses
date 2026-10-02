@@ -41,8 +41,8 @@ Code is organized by feature, not by layer.
 - [ ] **Slice 1 - MVP:** record an expense and see the current month
   - [x] Category: migrations, entity, repository, integration tests
   - [x] Expense: migration, entity, period query, integration tests
-  - [ ] Service layer with unit tests (Mockito)
-  - [ ] REST API with validation and error handling (MockMvc)
+  - [x] Service layer with unit tests (Mockito)
+  - [x] REST API with validation and error handling (MockMvc)
   - [ ] Frontend: quick-entry screen and monthly list
 - [ ] **Slice 2 - In the cloud:** login, Dockerfile, CI, cloud deployment
 - [ ] **Slice 3 - Due dates:** recurring bills, due date tracking, email reminders
