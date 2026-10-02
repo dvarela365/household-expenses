@@ -1,21 +1,36 @@
 import type { Expense } from '../api/expenses'
-import EmptyState from './EmptyState'
+import { formatDayGroupLabel } from '../lib/date'
 import ExpenseListItem from './ExpenseListItem'
 
 type ExpenseListProps = {
   expenses: Expense[]
 }
 
-export default function ExpenseList({ expenses }: ExpenseListProps) {
-  if (expenses.length === 0) {
-    return <EmptyState />
+function groupByDay(expenses: Expense[]): [string, Expense[]][] {
+  const groups = new Map<string, Expense[]>()
+  for (const expense of expenses) {
+    const existing = groups.get(expense.date)
+    if (existing) existing.push(expense)
+    else groups.set(expense.date, [expense])
   }
+  return [...groups.entries()].sort(([a], [b]) => (a < b ? 1 : -1))
+}
+
+export default function ExpenseList({ expenses }: ExpenseListProps) {
+  const groups = groupByDay(expenses)
 
   return (
-    <ul className="divide-y divide-gray-100 bg-white">
-      {expenses.map((expense) => (
-        <ExpenseListItem key={expense.id} expense={expense} />
+    <div className="flex flex-col gap-4">
+      {groups.map(([date, dayExpenses]) => (
+        <section key={date}>
+          <h2 className="mb-2 px-1 text-sm font-semibold text-ink-soft">{formatDayGroupLabel(date)}</h2>
+          <ul className="divide-y divide-line rounded-card bg-surface">
+            {dayExpenses.map((expense) => (
+              <ExpenseListItem key={expense.id} expense={expense} />
+            ))}
+          </ul>
+        </section>
       ))}
-    </ul>
+    </div>
   )
 }

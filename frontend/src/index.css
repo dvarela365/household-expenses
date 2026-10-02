@@ -1,1 +1,39 @@
 @import "tailwindcss";
+
+@theme {
+  --color-ground: #eef5fb;
+  --color-surface: #ffffff;
+  --color-ink: #0f2338;
+  --color-ink-soft: #4c5e73;
+  --color-line: #d6e3ef;
+  --color-tint: #ddebf8;
+
+  --color-accent: #1e5a8c;
+  --color-celeste: #74acdf;
+  --color-sun: #f2b01e;
+  --color-mist: #9fb3c8;
+
+  --radius-card: 22px;
+  --radius-icon: 14px;
+
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-ground);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+@keyframes sheet-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.sheet-enter {
+  animation: sheet-slide-up 220ms ease-out;
+}

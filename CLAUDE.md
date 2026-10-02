@@ -57,3 +57,10 @@ Run Git commands from the repository root.
 - User-facing text in Spanish (Argentina). Format money as ARS with the `es-AR` locale.
 - Do not display backend validation messages verbatim. Use the field names in the `errors` object to show Spanish messages.
 - Do not add npm dependencies without asking first.
+
+## Verification limits
+
+- Do not start, stop or kill processes. Ask the user to run the app and report back.
+- Do not install packages, not even temporarily.
+- Do not write to the development database. Never create test data there.
+- Do not create files outside the scope of the task, not even temporary ones.

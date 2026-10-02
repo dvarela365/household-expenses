@@ -6,13 +6,15 @@ type FloatingAddButtonProps = {
 
 export default function FloatingAddButton({ onClick }: FloatingAddButtonProps) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label="Agregar gasto"
-      className="fixed bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700"
-    >
-      <Plus className="h-7 w-7" aria-hidden="true" />
-    </button>
+    <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center pb-6">
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex h-14 items-center gap-2 rounded-full bg-accent px-8 text-base font-semibold text-white shadow-[0_12px_24px_rgba(15,35,56,0.25)]"
+      >
+        <Plus className="h-5 w-5" aria-hidden="true" />
+        Cargar gasto
+      </button>
+    </div>
   )
 }
