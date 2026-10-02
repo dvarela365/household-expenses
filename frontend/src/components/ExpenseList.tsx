@@ -4,6 +4,7 @@ import ExpenseListItem from './ExpenseListItem'
 
 type ExpenseListProps = {
   expenses: Expense[]
+  onSelectExpense: (expense: Expense) => void
 }
 
 function groupByDay(expenses: Expense[]): [string, Expense[]][] {
@@ -16,7 +17,7 @@ function groupByDay(expenses: Expense[]): [string, Expense[]][] {
   return [...groups.entries()].sort(([a], [b]) => (a < b ? 1 : -1))
 }
 
-export default function ExpenseList({ expenses }: ExpenseListProps) {
+export default function ExpenseList({ expenses, onSelectExpense }: ExpenseListProps) {
   const groups = groupByDay(expenses)
 
   return (
@@ -26,7 +27,7 @@ export default function ExpenseList({ expenses }: ExpenseListProps) {
           <h2 className="mb-2 px-1 text-sm font-semibold text-ink-soft">{formatDayGroupLabel(date)}</h2>
           <ul className="divide-y divide-line rounded-card bg-surface">
             {dayExpenses.map((expense) => (
-              <ExpenseListItem key={expense.id} expense={expense} />
+              <ExpenseListItem key={expense.id} expense={expense} onSelect={onSelectExpense} />
             ))}
           </ul>
         </section>

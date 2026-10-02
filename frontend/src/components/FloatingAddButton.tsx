@@ -6,7 +6,7 @@ type FloatingAddButtonProps = {
 
 export default function FloatingAddButton({ onClick }: FloatingAddButtonProps) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 flex justify-center pb-6">
+    <div className="fixed inset-x-0 bottom-20 z-40 flex justify-center">
       <button
         type="button"
         onClick={onClick}

@@ -1,29 +1,5 @@
-import {
-  Bike,
-  Bus,
-  Circle,
-  Coffee,
-  GraduationCap,
-  HeartPulse,
-  Home,
-  Popcorn,
-  ShoppingCart,
-  Zap,
-  type LucideIcon,
-} from 'lucide-react'
-
-const ICONS_BY_NAME: Record<string, LucideIcon> = {
-  'shopping-cart': ShoppingCart,
-  zap: Zap,
-  bike: Bike,
-  coffee: Coffee,
-  bus: Bus,
-  'heart-pulse': HeartPulse,
-  'graduation-cap': GraduationCap,
-  home: Home,
-  popcorn: Popcorn,
-  circle: Circle,
-}
+import { Circle } from 'lucide-react'
+import { ICONS_BY_NAME } from '../lib/categoryIcons'
 
 type CategoryIconProps = {
   name: string

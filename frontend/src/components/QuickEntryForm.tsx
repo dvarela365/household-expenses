@@ -1,12 +1,20 @@
 import { useState, type FormEvent } from 'react'
 import { Calendar, ChevronDown, X } from 'lucide-react'
-import type { Category } from '../api/categories'
-import { createExpense, ValidationError, type Expense, type PaymentMethod } from '../api/expenses'
+import { ProblemError, ValidationError } from '../api/apiError'
+import type { Category, CategoryKind } from '../api/categories'
+import {
+  createExpense,
+  deleteExpense,
+  updateExpense,
+  type Expense,
+  type PaymentMethod,
+} from '../api/expenses'
 import { parseAmountInput } from '../lib/amount'
 import { formatArs } from '../lib/currency'
 import { formatDateChipLabel, todayLocalDateString } from '../lib/date'
 import { PAYMENT_METHODS } from '../lib/paymentMethod'
 import CategoryIcon from './CategoryIcon'
+import ConfirmDialog from './ConfirmDialog'
 
 const FIELD_MESSAGES: Record<string, string> = {
   amount: 'Ingresá un monto válido, por ejemplo 1500,50.',
@@ -21,22 +29,49 @@ const GENERAL_ERROR_MESSAGE = 'No pudimos guardar el gasto. Probá de nuevo en u
 
 type QuickEntryFormProps = {
   categories: Category[]
+  expense?: Expense
   onClose: () => void
-  onCreated: (expense: Expense) => void
+  onSaved: (expense: Expense) => void
+  onDeleted: () => void
+  onStaleOrGone: (message: string) => void
 }
 
-export default function QuickEntryForm({ categories, onClose, onCreated }: QuickEntryFormProps) {
-  const [amountInput, setAmountInput] = useState('')
-  const [categoryId, setCategoryId] = useState<number | null>(null)
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('DEBIT')
-  const [date, setDate] = useState(todayLocalDateString())
-  const [merchant, setMerchant] = useState('')
-  const [note, setNote] = useState('')
-  const [showMoreDetails, setShowMoreDetails] = useState(false)
+export default function QuickEntryForm({
+  categories,
+  expense,
+  onClose,
+  onSaved,
+  onDeleted,
+  onStaleOrGone,
+}: QuickEntryFormProps) {
+  const [amountInput, setAmountInput] = useState(
+    expense ? expense.amount.toFixed(2).replace('.', ',') : '',
+  )
+  const [categoryId, setCategoryId] = useState<number | null>(expense?.categoryId ?? null)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(expense?.paymentMethod ?? 'DEBIT')
+  const [date, setDate] = useState(expense?.date ?? todayLocalDateString())
+  const [merchant, setMerchant] = useState(expense?.merchant ?? '')
+  const [note, setNote] = useState(expense?.note ?? '')
+  const [showMoreDetails, setShowMoreDetails] = useState(Boolean(expense?.merchant || expense?.note))
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [generalError, setGeneralError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [amountTouched, setAmountTouched] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  const effectiveCategories: Category[] =
+    expense && !categories.some((category) => category.id === expense.categoryId)
+      ? [
+          ...categories,
+          {
+            id: expense.categoryId,
+            name: expense.categoryName,
+            icon: expense.categoryIcon,
+            kind: 'VARIABLE' as CategoryKind,
+            archived: true,
+          },
+        ]
+      : categories
 
   const parsedAmount = parseAmountInput(amountInput)
   const canSubmit = parsedAmount !== null && categoryId !== null && !isSubmitting
@@ -60,6 +95,16 @@ export default function QuickEntryForm({ categories, onClose, onCreated }: Quick
     })
   }
 
+  function handleProblemOrGeneralError(error: unknown) {
+    if (error instanceof ProblemError && error.status === 409) {
+      onStaleOrGone('Este gasto se modificó desde otro lugar. Actualizamos la lista.')
+    } else if (error instanceof ProblemError && error.status === 404) {
+      onStaleOrGone('Este gasto ya no existe.')
+    } else {
+      setGeneralError(GENERAL_ERROR_MESSAGE)
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
@@ -77,15 +122,18 @@ export default function QuickEntryForm({ categories, onClose, onCreated }: Quick
     setIsSubmitting(true)
 
     try {
-      const expense = await createExpense({
+      const payload = {
         amount: parsedAmount,
         date,
         categoryId,
         paymentMethod,
         merchant: showMoreDetails && merchant.trim() ? merchant.trim() : undefined,
         note: showMoreDetails && note.trim() ? note.trim() : undefined,
-      })
-      onCreated(expense)
+      }
+      const saved = expense
+        ? await updateExpense(expense.id, { ...payload, version: expense.version })
+        : await createExpense(payload)
+      onSaved(saved)
     } catch (error) {
       if (error instanceof ValidationError) {
         const mapped: Record<string, string> = {}
@@ -94,10 +142,21 @@ export default function QuickEntryForm({ categories, onClose, onCreated }: Quick
         }
         setFieldErrors(mapped)
       } else {
-        setGeneralError(GENERAL_ERROR_MESSAGE)
+        handleProblemOrGeneralError(error)
       }
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!expense) return
+    setShowDeleteConfirm(false)
+    try {
+      await deleteExpense(expense.id)
+      onDeleted()
+    } catch (error) {
+      handleProblemOrGeneralError(error)
     }
   }
 
@@ -109,7 +168,7 @@ export default function QuickEntryForm({ categories, onClose, onCreated }: Quick
         </div>
 
         <div className="flex shrink-0 items-center justify-between px-5 pt-3 pb-2">
-          <h2 className="text-lg font-bold text-ink">Nuevo gasto</h2>
+          <h2 className="text-lg font-bold text-ink">{expense ? 'Editar gasto' : 'Nuevo gasto'}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -153,7 +212,7 @@ export default function QuickEntryForm({ categories, onClose, onCreated }: Quick
           <div className="pt-5">
             <span className="mb-2 block text-sm font-medium text-ink-soft">Categoría</span>
             <div className="grid grid-cols-4 gap-2">
-              {categories.map((category) => {
+              {effectiveCategories.map((category) => {
                 const selected = categoryId === category.id
                 return (
                   <button
@@ -270,6 +329,18 @@ export default function QuickEntryForm({ categories, onClose, onCreated }: Quick
           )}
 
           {generalError && <p className="pt-4 text-sm text-red-600">{generalError}</p>}
+
+          {expense && (
+            <div className="mt-6 border-t border-line pt-4">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="text-sm font-semibold text-red-600"
+              >
+                Eliminar gasto
+              </button>
+            </div>
+          )}
         </form>
 
         <div className="shrink-0 border-t border-line px-5 py-4">
@@ -284,6 +355,16 @@ export default function QuickEntryForm({ categories, onClose, onCreated }: Quick
           </button>
         </div>
       </div>
+
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          message="¿Eliminar este gasto?"
+          confirmLabel="Eliminar"
+          destructive
+          onConfirm={handleDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+      )}
     </div>
   )
 }
