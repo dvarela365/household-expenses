@@ -17,8 +17,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
-import com.dvarela.expenses.category.CategoryNotFoundException;
-
 @WebMvcTest(ExpenseController.class)
 class ExpenseControllerTest {
 
@@ -59,8 +57,7 @@ class ExpenseControllerTest {
 
     @Test
     void register_returns422WhenCategoryDoesNotExist() {
-        when(expenseService.register(any())).thenThrow(new CategoryNotFoundException(99L));
-
+        when(expenseService.register(any())).thenThrow(new UnknownCategoryException(99L));
         assertThat(mvc.post().uri("/api/expenses")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""

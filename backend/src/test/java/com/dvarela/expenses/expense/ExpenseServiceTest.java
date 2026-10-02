@@ -22,7 +22,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.dvarela.expenses.category.Category;
 import com.dvarela.expenses.category.CategoryKind;
-import com.dvarela.expenses.category.CategoryNotFoundException;
 import com.dvarela.expenses.category.CategoryRepository;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -72,7 +71,7 @@ class ExpenseServiceTest {
                 PaymentMethod.CASH, null, null);
 
         assertThatThrownBy(() -> expenseService.register(request))
-                .isInstanceOf(CategoryNotFoundException.class);
+                .isInstanceOf(UnknownCategoryException.class);
         verify(expenseRepository, never()).save(any());
     }
 

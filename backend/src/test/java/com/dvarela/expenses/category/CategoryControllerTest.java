@@ -22,9 +22,9 @@ class CategoryControllerTest {
 
     @Test
     void findAll_returnsCategoriesAsJson() {
-        when(categoryService.findAll()).thenReturn(List.of(
-                new CategoryResponse(4L, "Café/Kiosco", CategoryKind.VARIABLE, "coffee"),
-                new CategoryResponse(3L, "Delivery", CategoryKind.VARIABLE, "bike")));
+        when(categoryService.findAll(false)).thenReturn(List.of(
+                new CategoryResponse(4L, "Café/Kiosco", CategoryKind.VARIABLE, "coffee", false),
+                new CategoryResponse(3L, "Delivery", CategoryKind.VARIABLE, "bike", false)));
 
         assertThat(mvc.get().uri("/api/categories"))
                 .hasStatusOk()

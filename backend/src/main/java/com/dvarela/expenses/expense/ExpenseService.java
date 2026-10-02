@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dvarela.expenses.category.Category;
-import com.dvarela.expenses.category.CategoryNotFoundException;
 import com.dvarela.expenses.category.CategoryRepository;
 
 @Service
@@ -27,7 +26,7 @@ public class ExpenseService {
     @Transactional
     public ExpenseResponse register(CreateExpenseRequest request) {
         Category category = categoryRepository.findById(request.categoryId())
-                .orElseThrow(() -> new CategoryNotFoundException(request.categoryId()));
+                .orElseThrow(() -> new UnknownCategoryException(request.categoryId()));
 
         Expense expense = new Expense(request.amount(), request.date(), category,
                 request.paymentMethod(), request.merchant(), request.note());
@@ -61,7 +60,7 @@ public class ExpenseService {
         }
 
         Category category = categoryRepository.findById(request.categoryId())
-                .orElseThrow(() -> new CategoryNotFoundException(request.categoryId()));
+                .orElseThrow(() -> new UnknownCategoryException(request.categoryId()));
 
         expense.update(request.amount(), request.date(), category,
                 request.paymentMethod(), request.merchant(), request.note());

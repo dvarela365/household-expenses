@@ -29,6 +29,9 @@ public class Category {
     @Column(length = 30)
     private String icon;
 
+    @Column(nullable = false)
+    private boolean archived;
+
     protected Category() {
         // required by JPA
     }
@@ -39,8 +42,18 @@ public class Category {
         this.icon = icon;
     }
 
+    public void update(String name, CategoryKind kind, String icon) {
+        this.name = name;
+        this.kind = kind;
+        this.icon = icon;
+    }
+
+    public boolean isArchived() { return archived; }
+
     public Long getId() { return id; }
     public String getName() { return name; }
     public CategoryKind getKind() { return kind; }
     public String getIcon() { return icon; }
+    public void archive() { this.archived = true; }
+    public void unarchive() { this.archived = false; }
 }

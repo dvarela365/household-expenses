@@ -48,4 +48,18 @@ class CategoryRepositoryTest {
         assertThatThrownBy(() -> categoryRepository.saveAndFlush(duplicate))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
+    @Test
+    void isInUse_isFalseForACategoryWithoutExpenses() {
+        Category otros = categoryRepository.findByName("Otros").orElseThrow();
+
+        assertThat(categoryRepository.isInUse(otros.getId())).isFalse();
+    }
+
+    @Test
+    void save_rejectsADuplicateNameWithDifferentCase() {
+        Category duplicate = new Category("DELIVERY", CategoryKind.VARIABLE, "bike");
+
+        assertThatThrownBy(() -> categoryRepository.saveAndFlush(duplicate))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
 }
