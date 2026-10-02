@@ -45,3 +45,15 @@ Run Git commands from the repository root.
 - Do not change `ddl-auto`, the Flyway migrations already applied, or the UTC settings in `pom.xml`.
 - Do not add dependencies without explaining why.
 - Do not commit or push. Leave changes for human review.
+
+## Frontend (`frontend/`)
+
+- React, TypeScript, Vite and Tailwind CSS v4. Mobile-first: design for a phone screen first.
+- Commands, from `frontend/`: `npm run dev`, `npm run lint`, `npm run build`.
+  A frontend task is done only when `npm run lint` and `npm run build` pass.
+- Call the backend with relative URLs under `/api`. Vite proxies them to port 8080. Never hardcode `localhost:8080`.
+- API types mirror the backend DTOs and live in `src/api/`, together with the functions that call the API.
+- One component per file in `src/components/`.
+- User-facing text in Spanish (Argentina). Format money as ARS with the `es-AR` locale.
+- Do not display backend validation messages verbatim. Use the field names in the `errors` object to show Spanish messages.
+- Do not add npm dependencies without asking first.
