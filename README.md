@@ -39,6 +39,7 @@ Code is organized by feature, not by layer.
 
 - [x] **Phase 0** - Project skeleton, PostgreSQL in Docker, UTC, Git
 - [x] **Slice 1 - MVP:** record an expense and see the current month
+  - [x] **Data management:** edit and delete expenses (optimistic locking), manage and archive categories
   - [x] Category: migrations, entity, repository, integration tests
   - [x] Expense: migration, entity, period query, integration tests
   - [x] Service layer with unit tests (Mockito)
