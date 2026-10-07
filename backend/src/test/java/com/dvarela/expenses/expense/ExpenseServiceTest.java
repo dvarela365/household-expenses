@@ -23,7 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.dvarela.expenses.category.Category;
 import com.dvarela.expenses.category.CategoryKind;
 import com.dvarela.expenses.category.CategoryRepository;
-import org.springframework.test.util.ReflectionTestUtils;
+import static com.dvarela.expenses.expense.ExpenseBuilder.anExpense;
 
 @ExtendWith(MockitoExtension.class)
 class ExpenseServiceTest {
@@ -80,8 +80,8 @@ class ExpenseServiceTest {
         when(expenseRepository.findAllInPeriodWithCategory(
                 LocalDate.of(2026, 10, 1), LocalDate.of(2026, 11, 1)))
                 .thenReturn(List.of(
-                        expense("100.25", 5),
-                        expense("200.25", 20)));
+                        anExpense().withAmount("100.25").onDate(LocalDate.of(2026, 10, 5)).inCategory(supermercado).build(),
+                        anExpense().withAmount("200.25").onDate(LocalDate.of(2026, 10, 20)).inCategory(supermercado).build()));
 
         MonthlyExpensesResponse result = expenseService.findByMonth(YearMonth.of(2026, 10));
 
@@ -99,14 +99,9 @@ class ExpenseServiceTest {
         assertThat(result.expenses()).isEmpty();
     }
 
-    private Expense expense(String amount, int day) {
-        return new Expense(new BigDecimal(amount), LocalDate.of(2026, 10, day),
-                supermercado, PaymentMethod.DEBIT, null, null);
-    }
-
     @Test
     void update_changesTheExpenseAndReturnsTheNewData() {
-        Expense expense = persistedExpense(10L, 3L);
+        Expense expense = anExpense().inCategory(supermercado).persisted(10L, 3L).build();
         Category delivery = new Category("Delivery", CategoryKind.VARIABLE, "bike");
         when(expenseRepository.findById(10L)).thenReturn(Optional.of(expense));
         when(categoryRepository.findById(2L)).thenReturn(Optional.of(delivery));
@@ -125,8 +120,8 @@ class ExpenseServiceTest {
 
     @Test
     void update_failsWhenTheVersionIsStale() {
-        when(expenseRepository.findById(10L)).thenReturn(Optional.of(persistedExpense(10L, 4L)));
-
+        when(expenseRepository.findById(10L)).thenReturn(Optional.of(
+                anExpense().inCategory(supermercado).persisted(10L, 4L).build()));
         UpdateExpenseRequest staleRequest = new UpdateExpenseRequest(
                 new BigDecimal("100"), LocalDate.of(2026, 10, 1), 1L,
                 PaymentMethod.CASH, null, null, 3L);
@@ -150,8 +145,7 @@ class ExpenseServiceTest {
 
     @Test
     void delete_removesTheExpense() {
-        Expense expense = persistedExpense(10L, 0L);
-        when(expenseRepository.findById(10L)).thenReturn(Optional.of(expense));
+        Expense expense = anExpense().inCategory(supermercado).persisted(10L, 0L).build();        when(expenseRepository.findById(10L)).thenReturn(Optional.of(expense));
 
         expenseService.delete(10L);
 
@@ -167,10 +161,4 @@ class ExpenseServiceTest {
         verify(expenseRepository, never()).delete(any());
     }
 
-    private Expense persistedExpense(Long id, Long version) {
-        Expense expense = expense("100.00", 1);
-        ReflectionTestUtils.setField(expense, "id", id);
-        ReflectionTestUtils.setField(expense, "version", version);
-        return expense;
-    }
 }
