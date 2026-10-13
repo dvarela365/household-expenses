@@ -145,7 +145,8 @@ class ExpenseServiceTest {
 
     @Test
     void delete_removesTheExpense() {
-        Expense expense = anExpense().inCategory(supermercado).persisted(10L, 0L).build();        when(expenseRepository.findById(10L)).thenReturn(Optional.of(expense));
+        Expense expense = anExpense().inCategory(supermercado).persisted(10L, 0L).build();
+        when(expenseRepository.findById(10L)).thenReturn(Optional.of(expense));
 
         expenseService.delete(10L);
 
