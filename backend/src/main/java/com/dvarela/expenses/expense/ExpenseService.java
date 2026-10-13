@@ -36,8 +36,10 @@ public class ExpenseService {
 
     @Transactional(readOnly = true)
     public MonthlyExpensesResponse findByMonth(YearMonth month) {
+        MonthRange range = MonthRange.of(month);
+
         List<Expense> expenses = expenseRepository.findAllInPeriodWithCategory(
-                month.atDay(1), month.plusMonths(1).atDay(1));
+                range.start(), range.endExclusive());
 
         BigDecimal total = expenses.stream()
                 .map(Expense::getAmount)
