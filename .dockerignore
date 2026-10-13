@@ -1,0 +1,23 @@
+# VCS e IDE
+.git
+.gitignore
+.idea
+.vscode
+*.iml
+
+# Backend: artefactos de compilación
+backend/target
+
+# Frontend: dependencias y build locales (la imagen hace su propio npm ci y build)
+frontend/node_modules
+frontend/dist
+
+# Secretos y basura local
+**/.env
+**/.env.*
+**/*.log
+
+# Documentación y config de herramientas que la imagen no necesita
+docs
+CLAUDE.md
+README.md
