@@ -71,18 +71,21 @@ class ExpenseRepositoryTest {
         assertThat(found.getAmount()).isEqualByComparingTo("1234.5");
         assertThat(found.getAmount()).isEqualTo(new BigDecimal("1234.50"));
     }
-
     @Test
     void save_rejectsNonPositiveAmount() {
         Expense invalid = new Expense(BigDecimal.ZERO, LocalDate.of(2026, 10, 1),
                 supermercado, PaymentMethod.CASH, null, null);
 
-        assertThatThrownBy(() -> expenseRepository.saveAndFlush(invalid))
-                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> {
+            expenseRepository.save(invalid);
+            expenseRepository.flush();
+        }).isInstanceOf(DataIntegrityViolationException.class);
     }
 
     private Expense save(String amount, LocalDate date) {
-        return expenseRepository.saveAndFlush(new Expense(
+        Expense saved = expenseRepository.save(new Expense(
                 new BigDecimal(amount), date, supermercado, PaymentMethod.DEBIT, null, null));
+        expenseRepository.flush();
+        return saved;
     }
 }

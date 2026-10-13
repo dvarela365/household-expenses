@@ -2,12 +2,21 @@ package com.dvarela.expenses.expense;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 
-public interface ExpenseRepository extends JpaRepository<Expense, Long> {
+public interface ExpenseRepository extends Repository<Expense, Long> {
+
+    <S extends Expense> S save(S expense);
+
+    Optional<Expense> findById(Long id);
+
+    void delete(Expense expense);
+
+    void flush();
 
     @Query("""
             select e from Expense e
