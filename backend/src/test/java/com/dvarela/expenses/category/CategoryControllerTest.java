@@ -2,11 +2,13 @@ package com.dvarela.expenses.category;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -14,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
+
+import com.dvarela.expenses.household.CurrentHousehold;
 
 @WebMvcTest(CategoryController.class)
 class CategoryControllerTest {
@@ -24,9 +28,17 @@ class CategoryControllerTest {
     @MockitoBean
     private CategoryService categoryService;
 
+    @MockitoBean
+    private CurrentHousehold currentHousehold;
+
+    @BeforeEach
+    void setUp() {
+        when(currentHousehold.id()).thenReturn(1L);
+    }
+
     @Test
     void findAll_returnsCategoriesAsJson() {
-        when(categoryService.findAll(false)).thenReturn(List.of(
+        when(categoryService.findAll(1L, false)).thenReturn(List.of(
                 new CategoryResponse(4L, "Café/Kiosco", CategoryKind.VARIABLE, "coffee", false),
                 new CategoryResponse(3L, "Delivery", CategoryKind.VARIABLE, "bike", false)));
 
@@ -38,7 +50,7 @@ class CategoryControllerTest {
 
     @Test
     void create_returns201WithTheNewCategory() {
-        when(categoryService.create(any())).thenReturn(
+        when(categoryService.create(eq(1L), any())).thenReturn(
                 new CategoryResponse(11L, "Mascotas", CategoryKind.VARIABLE, "dog", false));
 
         assertThat(mvc.post().uri("/api/categories")
@@ -52,7 +64,7 @@ class CategoryControllerTest {
 
     @Test
     void create_returns409WhenTheNameIsTaken() {
-        when(categoryService.create(any())).thenThrow(new CategoryNameTakenException("delivery"));
+        when(categoryService.create(eq(1L), any())).thenThrow(new CategoryNameTakenException("delivery"));
 
         assertThat(mvc.post().uri("/api/categories")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -76,7 +88,7 @@ class CategoryControllerTest {
 
     @Test
     void delete_returns409WhenTheCategoryHasExpenses() {
-        doThrow(new CategoryInUseException(3L)).when(categoryService).delete(3L);
+        doThrow(new CategoryInUseException(3L)).when(categoryService).delete(1L, 3L);
 
         assertThat(mvc.delete().uri("/api/categories/3"))
                 .hasStatus(HttpStatus.CONFLICT)
@@ -85,7 +97,7 @@ class CategoryControllerTest {
 
     @Test
     void archive_returnsTheArchivedCategory() {
-        when(categoryService.archive(3L)).thenReturn(
+        when(categoryService.archive(1L, 3L)).thenReturn(
                 new CategoryResponse(3L, "Delivery", CategoryKind.VARIABLE, "bike", true));
 
         assertThat(mvc.post().uri("/api/categories/3/archive"))

@@ -18,6 +18,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class CategoryServiceTest {
 
+    private static final Long HOUSEHOLD = 1L;
+    private static final Long OTHER_HOUSEHOLD = 2L;
+
     @Mock
     private CategoryRepository categoryRepository;
 
@@ -26,10 +29,10 @@ class CategoryServiceTest {
 
     @Test
     void create_trimsTheNameAndSaves() {
-        when(categoryRepository.existsByNameIgnoreCase("Mascotas")).thenReturn(false);
+        when(categoryRepository.existsByHouseholdIdAndNameIgnoreCase(HOUSEHOLD, "Mascotas")).thenReturn(false);
         when(categoryRepository.save(any(Category.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        CategoryResponse response = categoryService.create(
+        CategoryResponse response = categoryService.create(HOUSEHOLD,
                 new CategoryRequest("  Mascotas  ", CategoryKind.VARIABLE, "dog"));
 
         assertThat(response.name()).isEqualTo("Mascotas");
@@ -37,9 +40,9 @@ class CategoryServiceTest {
 
     @Test
     void create_rejectsADuplicateName() {
-        when(categoryRepository.existsByNameIgnoreCase("delivery")).thenReturn(true);
+        when(categoryRepository.existsByHouseholdIdAndNameIgnoreCase(HOUSEHOLD, "delivery")).thenReturn(true);
 
-        assertThatThrownBy(() -> categoryService.create(
+        assertThatThrownBy(() -> categoryService.create(HOUSEHOLD,
                 new CategoryRequest("delivery", CategoryKind.VARIABLE, "bike")))
                 .isInstanceOf(CategoryNameTakenException.class);
         verify(categoryRepository, never()).save(any());
@@ -47,34 +50,42 @@ class CategoryServiceTest {
 
     @Test
     void delete_rejectsACategoryWithExpenses() {
-        Category category = new Category("Delivery", CategoryKind.VARIABLE, "bike");
-        when(categoryRepository.findById(3L)).thenReturn(Optional.of(category));
+        Category category = new Category(HOUSEHOLD, "Delivery", CategoryKind.VARIABLE, "bike");
+        when(categoryRepository.findByIdAndHouseholdId(3L, HOUSEHOLD)).thenReturn(Optional.of(category));
         when(categoryRepository.isInUse(3L)).thenReturn(true);
 
-        assertThatThrownBy(() -> categoryService.delete(3L))
+        assertThatThrownBy(() -> categoryService.delete(HOUSEHOLD, 3L))
                 .isInstanceOf(CategoryInUseException.class);
         verify(categoryRepository, never()).delete(any());
     }
 
     @Test
     void delete_removesAnUnusedCategory() {
-        Category category = new Category("Mascotas", CategoryKind.VARIABLE, "dog");
-        when(categoryRepository.findById(11L)).thenReturn(Optional.of(category));
+        Category category = new Category(HOUSEHOLD, "Mascotas", CategoryKind.VARIABLE, "dog");
+        when(categoryRepository.findByIdAndHouseholdId(11L, HOUSEHOLD)).thenReturn(Optional.of(category));
         when(categoryRepository.isInUse(11L)).thenReturn(false);
 
-        categoryService.delete(11L);
+        categoryService.delete(HOUSEHOLD, 11L);
 
         verify(categoryRepository).delete(category);
     }
 
     @Test
     void archive_marksTheCategoryAsArchived() {
-        Category category = new Category("Delivery", CategoryKind.VARIABLE, "bike");
-        when(categoryRepository.findById(3L)).thenReturn(Optional.of(category));
+        Category category = new Category(HOUSEHOLD, "Delivery", CategoryKind.VARIABLE, "bike");
+        when(categoryRepository.findByIdAndHouseholdId(3L, HOUSEHOLD)).thenReturn(Optional.of(category));
 
-        CategoryResponse response = categoryService.archive(3L);
+        CategoryResponse response = categoryService.archive(HOUSEHOLD, 3L);
 
         assertThat(category.isArchived()).isTrue();
         assertThat(response.archived()).isTrue();
+    }
+
+    @Test
+    void archive_failsForACategoryOfAnotherHousehold() {
+        when(categoryRepository.findByIdAndHouseholdId(3L, OTHER_HOUSEHOLD)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> categoryService.archive(OTHER_HOUSEHOLD, 3L))
+                .isInstanceOf(CategoryNotFoundException.class);
     }
 }

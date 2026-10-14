@@ -32,14 +32,24 @@ public class Category {
     @Column(nullable = false)
     private boolean archived;
 
+    @Column(name = "household_id")
+    private Long householdId;
+
     protected Category() {
         // required by JPA
     }
 
-    public Category(String name, CategoryKind kind, String icon) {
+    public Category(Long householdId, String name, CategoryKind kind, String icon) {
+        this.householdId = householdId;
         this.name = name;
         this.kind = kind;
         this.icon = icon;
+    }
+
+    /** @deprecated Creates a category without household. Removed in step 1.4 (contract). */
+    @Deprecated(forRemoval = true)
+    public Category(String name, CategoryKind kind, String icon) {
+        this(null, name, kind, icon);
     }
 
     public void update(String name, CategoryKind kind, String icon) {
@@ -56,4 +66,5 @@ public class Category {
     public String getIcon() { return icon; }
     public void archive() { this.archived = true; }
     public void unarchive() { this.archived = false; }
+    public Long getHouseholdId() { return householdId; }
 }

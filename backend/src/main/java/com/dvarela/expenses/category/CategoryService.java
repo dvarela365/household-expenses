@@ -15,28 +15,29 @@ public class CategoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<CategoryResponse> findAll(boolean includeArchived) {
+    public List<CategoryResponse> findAll(Long householdId, boolean includeArchived) {
         List<Category> categories = includeArchived
-                ? categoryRepository.findAllByOrderByNameAsc()
-                : categoryRepository.findAllByArchivedFalseOrderByNameAsc();
+                ? categoryRepository.findAllByHouseholdIdOrderByNameAsc(householdId)
+                : categoryRepository.findAllByHouseholdIdAndArchivedFalseOrderByNameAsc(householdId);
         return categories.stream().map(CategoryResponse::from).toList();
     }
 
     @Transactional
-    public CategoryResponse create(CategoryRequest request) {
+    public CategoryResponse create(Long householdId, CategoryRequest request) {
         String name = request.name().trim();
-        if (categoryRepository.existsByNameIgnoreCase(name)) {
+        if (categoryRepository.existsByHouseholdIdAndNameIgnoreCase(householdId, name)) {
             throw new CategoryNameTakenException(name);
         }
-        Category saved = categoryRepository.save(new Category(name, request.kind(), request.icon()));
+        Category saved = categoryRepository.save(
+                new Category(householdId, name, request.kind(), request.icon()));
         return CategoryResponse.from(saved);
     }
 
     @Transactional
-    public CategoryResponse update(Long id, CategoryRequest request) {
-        Category category = findCategory(id);
+    public CategoryResponse update(Long householdId, Long id, CategoryRequest request) {
+        Category category = findCategory(householdId, id);
         String name = request.name().trim();
-        if (categoryRepository.existsByNameIgnoreCaseAndIdNot(name, id)) {
+        if (categoryRepository.existsByHouseholdIdAndNameIgnoreCaseAndIdNot(householdId, name, id)) {
             throw new CategoryNameTakenException(name);
         }
         category.update(name, request.kind(), request.icon());
@@ -44,8 +45,8 @@ public class CategoryService {
     }
 
     @Transactional
-    public void delete(Long id) {
-        Category category = findCategory(id);
+    public void delete(Long householdId, Long id) {
+        Category category = findCategory(householdId, id);
         if (categoryRepository.isInUse(id)) {
             throw new CategoryInUseException(id);
         }
@@ -53,21 +54,21 @@ public class CategoryService {
     }
 
     @Transactional
-    public CategoryResponse archive(Long id) {
-        Category category = findCategory(id);
+    public CategoryResponse archive(Long householdId, Long id) {
+        Category category = findCategory(householdId, id);
         category.archive();
         return CategoryResponse.from(category);
     }
 
     @Transactional
-    public CategoryResponse unarchive(Long id) {
-        Category category = findCategory(id);
+    public CategoryResponse unarchive(Long householdId, Long id) {
+        Category category = findCategory(householdId, id);
         category.unarchive();
         return CategoryResponse.from(category);
     }
 
-    private Category findCategory(Long id) {
-        return categoryRepository.findById(id)
+    private Category findCategory(Long householdId, Long id) {
+        return categoryRepository.findByIdAndHouseholdId(id, householdId)
                 .orElseThrow(() -> new CategoryNotFoundException(id));
     }
 }

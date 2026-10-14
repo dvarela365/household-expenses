@@ -13,18 +13,26 @@ import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import com.dvarela.expenses.TestcontainersConfiguration;
+import com.dvarela.expenses.household.Household;
+import com.dvarela.expenses.household.HouseholdRepository;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(TestcontainersConfiguration.class)
 class CategoryRepositoryTest {
 
+    /** The initial household created by V6; owns the seeded categories. */
+    private static final Long INITIAL_HOUSEHOLD = 1L;
+
     @Autowired
     private CategoryRepository categoryRepository;
 
+    @Autowired
+    private HouseholdRepository householdRepository;
+
     @Test
-    void findAllByOrderByNameAsc_returnsSeededCategoriesSortedByName() {
-        List<Category> categories = categoryRepository.findAllByOrderByNameAsc();
+    void findAllByHouseholdIdOrderByNameAsc_returnsSeededCategoriesSortedByName() {
+        List<Category> categories = categoryRepository.findAllByHouseholdIdOrderByNameAsc(INITIAL_HOUSEHOLD);
 
         assertThat(categories)
                 .extracting(Category::getName)
@@ -36,18 +44,19 @@ class CategoryRepositoryTest {
     @Test
     void save_assignsGeneratedId() {
         Category saved = categoryRepository.saveAndFlush(
-                new Category("Mascotas", CategoryKind.VARIABLE, "paw-print"));
+                new Category(INITIAL_HOUSEHOLD, "Mascotas", CategoryKind.VARIABLE, "paw-print"));
 
         assertThat(saved.getId()).isNotNull();
     }
 
     @Test
     void save_rejectsDuplicateName() {
-        Category duplicate = new Category("Delivery", CategoryKind.VARIABLE, "bike");
+        Category duplicate = new Category(INITIAL_HOUSEHOLD, "Delivery", CategoryKind.VARIABLE, "bike");
 
         assertThatThrownBy(() -> categoryRepository.saveAndFlush(duplicate))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
+
     @Test
     void isInUse_isFalseForACategoryWithoutExpenses() {
         Category otros = categoryRepository.findByName("Otros").orElseThrow();
@@ -57,9 +66,21 @@ class CategoryRepositoryTest {
 
     @Test
     void save_rejectsADuplicateNameWithDifferentCase() {
-        Category duplicate = new Category("DELIVERY", CategoryKind.VARIABLE, "bike");
+        Category duplicate = new Category(INITIAL_HOUSEHOLD, "DELIVERY", CategoryKind.VARIABLE, "bike");
 
         assertThatThrownBy(() -> categoryRepository.saveAndFlush(duplicate))
                 .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void findByIdAndHouseholdId_doesNotReturnACategoryOfAnotherHousehold() {
+        Household other = householdRepository.save(new Household("Otro hogar"));
+        Category foreign = categoryRepository.saveAndFlush(
+                new Category(other.getId(), "Mascotas", CategoryKind.VARIABLE, "paw-print"));
+
+        assertThat(categoryRepository.findByIdAndHouseholdId(foreign.getId(), INITIAL_HOUSEHOLD)).isEmpty();
+        assertThat(categoryRepository.findAllByHouseholdIdOrderByNameAsc(INITIAL_HOUSEHOLD))
+                .extracting(Category::getName)
+                .doesNotContain("Mascotas");
     }
 }
