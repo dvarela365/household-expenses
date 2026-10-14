@@ -18,7 +18,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 
 import com.dvarela.expenses.TestcontainersConfiguration;
 import com.dvarela.expenses.category.Category;
+import com.dvarela.expenses.category.CategoryKind;
 import com.dvarela.expenses.category.CategoryRepository;
+import com.dvarela.expenses.household.Household;
+import com.dvarela.expenses.household.HouseholdRepository;
 
 import jakarta.persistence.EntityManager;
 
@@ -27,11 +30,17 @@ import jakarta.persistence.EntityManager;
 @Import(TestcontainersConfiguration.class)
 class ExpenseRepositoryTest {
 
+    /** The initial household created by V6; owns the seeded categories. */
+    private static final Long INITIAL_HOUSEHOLD = 1L;
+
     @Autowired
     private ExpenseRepository expenseRepository;
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private HouseholdRepository householdRepository;
 
     @Autowired
     private EntityManager entityManager;
@@ -45,14 +54,14 @@ class ExpenseRepositoryTest {
 
     @Test
     void findAllInPeriodWithCategory_returnsOnlyExpensesInPeriodNewestFirst() {
-        save("100.00", LocalDate.of(2026, 9, 30));
-        save("200.00", LocalDate.of(2026, 10, 1));
-        save("300.00", LocalDate.of(2026, 10, 31));
-        save("400.00", LocalDate.of(2026, 11, 1));
+        save(INITIAL_HOUSEHOLD, supermercado, "100.00", LocalDate.of(2026, 9, 30));
+        save(INITIAL_HOUSEHOLD, supermercado, "200.00", LocalDate.of(2026, 10, 1));
+        save(INITIAL_HOUSEHOLD, supermercado, "300.00", LocalDate.of(2026, 10, 31));
+        save(INITIAL_HOUSEHOLD, supermercado, "400.00", LocalDate.of(2026, 11, 1));
         entityManager.clear();
 
         List<Expense> result = expenseRepository.findAllInPeriodWithCategory(
-                LocalDate.of(2026, 10, 1), LocalDate.of(2026, 11, 1));
+                INITIAL_HOUSEHOLD, LocalDate.of(2026, 10, 1), LocalDate.of(2026, 11, 1));
 
         assertThat(result)
                 .extracting(Expense::getDate)
@@ -62,18 +71,46 @@ class ExpenseRepositoryTest {
     }
 
     @Test
-    void amount_keepsExactDecimalValue() {
-        Expense saved = save("1234.5", LocalDate.of(2026, 10, 1));
+    void findAllInPeriodWithCategory_excludesExpensesOfAnotherHousehold() {
+        Household other = householdRepository.save(new Household("Otro hogar"));
+        Category otherCategory = categoryRepository.saveAndFlush(
+                new Category(other.getId(), "Varios", CategoryKind.VARIABLE, "package"));
+        save(INITIAL_HOUSEHOLD, supermercado, "100.00", LocalDate.of(2026, 10, 10));
+        save(other.getId(), otherCategory, "999.00", LocalDate.of(2026, 10, 10));
         entityManager.clear();
 
-        Expense found = expenseRepository.findById(saved.getId()).orElseThrow();
+        List<Expense> result = expenseRepository.findAllInPeriodWithCategory(
+                INITIAL_HOUSEHOLD, LocalDate.of(2026, 10, 1), LocalDate.of(2026, 11, 1));
+
+        assertThat(result)
+                .extracting(Expense::getAmount)
+                .usingElementComparator(BigDecimal::compareTo)
+                .containsExactly(new BigDecimal("100.00"));
+    }
+
+    @Test
+    void findByIdAndHouseholdId_doesNotReturnAnExpenseOfAnotherHousehold() {
+        Expense mine = save(INITIAL_HOUSEHOLD, supermercado, "100.00", LocalDate.of(2026, 10, 1));
+        entityManager.clear();
+
+        assertThat(expenseRepository.findByIdAndHouseholdId(mine.getId(), INITIAL_HOUSEHOLD)).isPresent();
+        assertThat(expenseRepository.findByIdAndHouseholdId(mine.getId(), 999L)).isEmpty();
+    }
+
+    @Test
+    void amount_keepsExactDecimalValue() {
+        Expense saved = save(INITIAL_HOUSEHOLD, supermercado, "1234.5", LocalDate.of(2026, 10, 1));
+        entityManager.clear();
+
+        Expense found = expenseRepository.findByIdAndHouseholdId(saved.getId(), INITIAL_HOUSEHOLD).orElseThrow();
 
         assertThat(found.getAmount()).isEqualByComparingTo("1234.5");
         assertThat(found.getAmount()).isEqualTo(new BigDecimal("1234.50"));
     }
+
     @Test
     void save_rejectsNonPositiveAmount() {
-        Expense invalid = new Expense(BigDecimal.ZERO, LocalDate.of(2026, 10, 1),
+        Expense invalid = new Expense(INITIAL_HOUSEHOLD, BigDecimal.ZERO, LocalDate.of(2026, 10, 1),
                 supermercado, PaymentMethod.CASH, null, null);
 
         assertThatThrownBy(() -> {
@@ -82,9 +119,9 @@ class ExpenseRepositoryTest {
         }).isInstanceOf(DataIntegrityViolationException.class);
     }
 
-    private Expense save(String amount, LocalDate date) {
+    private Expense save(Long householdId, Category category, String amount, LocalDate date) {
         Expense saved = expenseRepository.save(new Expense(
-                new BigDecimal(amount), date, supermercado, PaymentMethod.DEBIT, null, null));
+                householdId, new BigDecimal(amount), date, category, PaymentMethod.DEBIT, null, null));
         expenseRepository.flush();
         return saved;
     }

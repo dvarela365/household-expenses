@@ -12,12 +12,13 @@ final class ExpenseBuilder {
 
     private BigDecimal amount = new BigDecimal("100.00");
     private LocalDate date = LocalDate.of(2026, 10, 1);
-    private Category category = new Category("Supermercado", CategoryKind.VARIABLE, "shopping-cart");
-    private PaymentMethod paymentMethod = PaymentMethod.DEBIT;
+    private Category category = new Category(1L, "Supermercado", CategoryKind.VARIABLE, "shopping-cart");    private PaymentMethod paymentMethod = PaymentMethod.DEBIT;
     private String merchant;
     private String note;
     private Long id;
     private Long version;
+    private Long householdId = 1L;
+
 
     private ExpenseBuilder() {
     }
@@ -57,9 +58,13 @@ final class ExpenseBuilder {
         return this;
     }
 
+    ExpenseBuilder inHousehold(Long householdId) {
+        this.householdId = householdId;
+        return this;
+    }
+
     Expense build() {
-        Expense expense = new Expense(amount, date, category, paymentMethod, merchant, note);
-        if (id != null) {
+        Expense expense = new Expense(householdId, amount, date, category, paymentMethod, merchant, note);        if (id != null) {
             ReflectionTestUtils.setField(expense, "id", id);
             ReflectionTestUtils.setField(expense, "version", version);
         }

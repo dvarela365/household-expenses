@@ -16,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
+import com.dvarela.expenses.household.CurrentHousehold;
+import org.junit.jupiter.api.BeforeEach;
 
 @WebMvcTest(ExpenseController.class)
 class ExpenseControllerTest {
@@ -26,9 +28,12 @@ class ExpenseControllerTest {
     @MockitoBean
     private ExpenseService expenseService;
 
+    @MockitoBean
+    private CurrentHousehold currentHousehold;
+
     @Test
     void register_returns201WithTheCreatedExpense() {
-        when(expenseService.register(any())).thenReturn(new ExpenseResponse(
+        when(expenseService.register(eq(1L), any())).thenReturn(new ExpenseResponse(
                 1L, new BigDecimal("15300.50"), LocalDate.of(2026, 10, 1),
                 1L, "Supermercado", "shopping-cart", PaymentMethod.DEBIT, "Coto", null, 0L));
 
@@ -52,12 +57,12 @@ class ExpenseControllerTest {
                 .hasStatus(HttpStatus.BAD_REQUEST)
                 .bodyJson().extractingPath("$.errors.amount").isNotNull();
 
-        verify(expenseService, never()).register(any());
+        verify(expenseService, never()).register(any(), any());
     }
 
     @Test
     void register_returns422WhenCategoryDoesNotExist() {
-        when(expenseService.register(any())).thenThrow(new UnknownCategoryException(99L));
+        when(expenseService.register(eq(1L), any())).thenThrow(new UnknownCategoryException(99L));
         assertThat(mvc.post().uri("/api/expenses")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
@@ -70,7 +75,7 @@ class ExpenseControllerTest {
 
     @Test
     void findByMonth_returnsTheMonthWithItsTotal() {
-        when(expenseService.findByMonth(YearMonth.of(2026, 10))).thenReturn(
+        when(expenseService.findByMonth(1L, YearMonth.of(2026, 10))).thenReturn(
                 new MonthlyExpensesResponse(YearMonth.of(2026, 10), new BigDecimal("300.50"), List.of()));
 
         assertThat(mvc.get().uri("/api/expenses?month=2026-10"))
@@ -80,7 +85,7 @@ class ExpenseControllerTest {
 
     @Test
     void update_returns200WithTheUpdatedExpense() {
-        when(expenseService.update(eq(10L), any())).thenReturn(new ExpenseResponse(
+        when(expenseService.update(eq(1L), eq(10L), any())).thenReturn(new ExpenseResponse(
                 10L, new BigDecimal("999.99"), LocalDate.of(2026, 10, 3),
                 3L, "Delivery", "bike", PaymentMethod.CASH, "Rappi", null, 4L));
 
@@ -96,7 +101,7 @@ class ExpenseControllerTest {
 
     @Test
     void update_returns409WhenTheVersionIsStale() {
-        when(expenseService.update(eq(10L), any())).thenThrow(new ExpenseConflictException(10L));
+        when(expenseService.update(eq(1L), eq(10L), any())).thenThrow(new ExpenseConflictException(10L));
 
         assertThat(mvc.put().uri("/api/expenses/10")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -123,15 +128,20 @@ class ExpenseControllerTest {
         assertThat(mvc.delete().uri("/api/expenses/10"))
                 .hasStatus(HttpStatus.NO_CONTENT);
 
-        verify(expenseService).delete(10L);
+        verify(expenseService).delete(1L, 10L);
     }
 
     @Test
     void delete_returns404WhenTheExpenseDoesNotExist() {
-        doThrow(new ExpenseNotFoundException(99L)).when(expenseService).delete(99L);
+        doThrow(new ExpenseNotFoundException(99L)).when(expenseService).delete(1L, 99L);
 
         assertThat(mvc.delete().uri("/api/expenses/99"))
                 .hasStatus(HttpStatus.NOT_FOUND)
                 .bodyJson().extractingPath("$.title").isEqualTo("Expense not found");
+    }
+
+    @BeforeEach
+    void setUp() {
+        when(currentHousehold.id()).thenReturn(1L);
     }
 }

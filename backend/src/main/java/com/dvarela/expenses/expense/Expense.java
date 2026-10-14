@@ -51,6 +51,9 @@ public class Expense {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @Column(name = "household_id")
+    private Long householdId;
+
     @Version
     private Long version;
 
@@ -60,8 +63,9 @@ public class Expense {
         // required by JPA
     }
 
-    public Expense(BigDecimal amount, LocalDate date, Category category,
+    public Expense(Long householdId, BigDecimal amount, LocalDate date, Category category,
                    PaymentMethod paymentMethod, String merchant, String note) {
+        this.householdId = householdId;
         this.amount = amount;
         this.date = date;
         this.category = category;
@@ -91,4 +95,5 @@ public class Expense {
     public String getNote() { return note; }
     public Instant getCreatedAt() { return createdAt; }
     public Long getVersion() { return version; }
+    public Long getHouseholdId() { return householdId; }
 }

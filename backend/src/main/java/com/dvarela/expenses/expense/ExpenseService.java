@@ -24,22 +24,20 @@ public class ExpenseService {
     }
 
     @Transactional
-    public ExpenseResponse register(CreateExpenseRequest request) {
-        Category category = categoryRepository.findById(request.categoryId())
-                .orElseThrow(() -> new UnknownCategoryException(request.categoryId()));
+    public ExpenseResponse register(Long householdId, CreateExpenseRequest request) {
+        Category category = findCategory(householdId, request.categoryId());
 
-        Expense expense = new Expense(request.amount(), request.date(), category,
+        Expense expense = new Expense(householdId, request.amount(), request.date(), category,
                 request.paymentMethod(), request.merchant(), request.note());
 
         return ExpenseResponse.from(expenseRepository.save(expense));
     }
 
     @Transactional(readOnly = true)
-    public MonthlyExpensesResponse findByMonth(YearMonth month) {
+    public MonthlyExpensesResponse findByMonth(Long householdId, YearMonth month) {
         MonthRange range = MonthRange.of(month);
-
         List<Expense> expenses = expenseRepository.findAllInPeriodWithCategory(
-                range.start(), range.endExclusive());
+                householdId, range.start(), range.endExclusive());
 
         BigDecimal total = expenses.stream()
                 .map(Expense::getAmount)
@@ -53,16 +51,14 @@ public class ExpenseService {
     }
 
     @Transactional
-    public ExpenseResponse update(Long id, UpdateExpenseRequest request) {
-        Expense expense = expenseRepository.findById(id)
-                .orElseThrow(() -> new ExpenseNotFoundException(id));
+    public ExpenseResponse update(Long householdId, Long id, UpdateExpenseRequest request) {
+        Expense expense = findExpense(householdId, id);
 
         if (!Objects.equals(expense.getVersion(), request.version())) {
             throw new ExpenseConflictException(id);
         }
 
-        Category category = categoryRepository.findById(request.categoryId())
-                .orElseThrow(() -> new UnknownCategoryException(request.categoryId()));
+        Category category = findCategory(householdId, request.categoryId());
 
         expense.update(request.amount(), request.date(), category,
                 request.paymentMethod(), request.merchant(), request.note());
@@ -72,9 +68,17 @@ public class ExpenseService {
     }
 
     @Transactional
-    public void delete(Long id) {
-        Expense expense = expenseRepository.findById(id)
+    public void delete(Long householdId, Long id) {
+        expenseRepository.delete(findExpense(householdId, id));
+    }
+
+    private Expense findExpense(Long householdId, Long id) {
+        return expenseRepository.findByIdAndHouseholdId(id, householdId)
                 .orElseThrow(() -> new ExpenseNotFoundException(id));
-        expenseRepository.delete(expense);
+    }
+
+    private Category findCategory(Long householdId, Long categoryId) {
+        return categoryRepository.findByIdAndHouseholdId(categoryId, householdId)
+                .orElseThrow(() -> new UnknownCategoryException(categoryId));
     }
 }

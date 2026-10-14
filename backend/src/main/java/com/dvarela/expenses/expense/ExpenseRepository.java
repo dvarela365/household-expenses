@@ -12,7 +12,7 @@ public interface ExpenseRepository extends Repository<Expense, Long> {
 
     <S extends Expense> S save(S expense);
 
-    Optional<Expense> findById(Long id);
+    Optional<Expense> findByIdAndHouseholdId(Long id, Long householdId);
 
     void delete(Expense expense);
 
@@ -21,9 +21,11 @@ public interface ExpenseRepository extends Repository<Expense, Long> {
     @Query("""
             select e from Expense e
             join fetch e.category
-            where e.date >= :from and e.date < :to
+            where e.householdId = :householdId
+              and e.date >= :from and e.date < :to
             order by e.date desc, e.id desc
             """)
-    List<Expense> findAllInPeriodWithCategory(@Param("from") LocalDate from,
+    List<Expense> findAllInPeriodWithCategory(@Param("householdId") Long householdId,
+                                              @Param("from") LocalDate from,
                                               @Param("to") LocalDate to);
 }
