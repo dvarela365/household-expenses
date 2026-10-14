@@ -1,7 +1,5 @@
 package com.dvarela.expenses.category;
 
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -19,7 +17,10 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 50, unique = true)
+    @Column(name = "household_id", nullable = false)
+    private Long householdId;
+
+    @Column(nullable = false, length = 50)
     private String name;
 
     @Enumerated(EnumType.STRING)
@@ -32,9 +33,6 @@ public class Category {
     @Column(nullable = false)
     private boolean archived;
 
-    @Column(name = "household_id")
-    private Long householdId;
-
     protected Category() {
         // required by JPA
     }
@@ -46,25 +44,19 @@ public class Category {
         this.icon = icon;
     }
 
-    /** @deprecated Creates a category without household. Removed in step 1.4 (contract). */
-    @Deprecated(forRemoval = true)
-    public Category(String name, CategoryKind kind, String icon) {
-        this(null, name, kind, icon);
-    }
-
     public void update(String name, CategoryKind kind, String icon) {
         this.name = name;
         this.kind = kind;
         this.icon = icon;
     }
 
-    public boolean isArchived() { return archived; }
+    public void archive() { this.archived = true; }
+    public void unarchive() { this.archived = false; }
 
     public Long getId() { return id; }
+    public Long getHouseholdId() { return householdId; }
     public String getName() { return name; }
     public CategoryKind getKind() { return kind; }
     public String getIcon() { return icon; }
-    public void archive() { this.archived = true; }
-    public void unarchive() { this.archived = false; }
-    public Long getHouseholdId() { return householdId; }
+    public boolean isArchived() { return archived; }
 }

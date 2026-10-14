@@ -19,8 +19,6 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
 
     boolean existsByHouseholdIdAndNameIgnoreCaseAndIdNot(Long householdId, String name, Long id);
 
-    Optional<Category> findByName(String name);
-
     @Query("""
         select case when count(e) > 0 then true else false end
         from Expense e where e.category.id = :id

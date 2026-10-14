@@ -51,7 +51,7 @@ public class Expense {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
-    @Column(name = "household_id")
+    @Column(name = "household_id", nullable = false)
     private Long householdId;
 
     @Version

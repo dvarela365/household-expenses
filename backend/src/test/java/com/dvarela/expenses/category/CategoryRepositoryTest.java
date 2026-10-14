@@ -59,7 +59,10 @@ class CategoryRepositoryTest {
 
     @Test
     void isInUse_isFalseForACategoryWithoutExpenses() {
-        Category otros = categoryRepository.findByName("Otros").orElseThrow();
+        Category otros = categoryRepository.findAllByHouseholdIdOrderByNameAsc(INITIAL_HOUSEHOLD).stream()
+                .filter(c -> c.getName().equals("Otros"))
+                .findFirst()
+                .orElseThrow();
 
         assertThat(categoryRepository.isInUse(otros.getId())).isFalse();
     }
@@ -82,5 +85,15 @@ class CategoryRepositoryTest {
         assertThat(categoryRepository.findAllByHouseholdIdOrderByNameAsc(INITIAL_HOUSEHOLD))
                 .extracting(Category::getName)
                 .doesNotContain("Mascotas");
+    }
+
+    @Test
+    void save_allowsTheSameNameInAnotherHousehold() {
+        Household other = householdRepository.save(new Household("Otro hogar"));
+
+        Category saved = categoryRepository.saveAndFlush(
+                new Category(other.getId(), "Delivery", CategoryKind.VARIABLE, "bike"));
+
+        assertThat(saved.getId()).isNotNull();
     }
 }

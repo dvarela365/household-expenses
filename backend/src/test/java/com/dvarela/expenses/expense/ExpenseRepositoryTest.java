@@ -49,7 +49,7 @@ class ExpenseRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        supermercado = categoryRepository.findByName("Supermercado").orElseThrow();
+        supermercado = seededCategory("Supermercado");
     }
 
     @Test
@@ -124,5 +124,12 @@ class ExpenseRepositoryTest {
                 householdId, new BigDecimal(amount), date, category, PaymentMethod.DEBIT, null, null));
         expenseRepository.flush();
         return saved;
+    }
+
+    private Category seededCategory(String name) {
+        return categoryRepository.findAllByHouseholdIdOrderByNameAsc(INITIAL_HOUSEHOLD).stream()
+                .filter(c -> c.getName().equals(name))
+                .findFirst()
+                .orElseThrow();
     }
 }
