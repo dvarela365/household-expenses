@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: household
+      POSTGRES_USER: household
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U household -d household"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    image: household-expenses
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/household
+      SPRING_DATASOURCE_USERNAME: household
+      SPRING_DATASOURCE_PASSWORD: secret
+      SPRING_DOCKER_COMPOSE_ENABLED: "false"
+    ports:
+      - "127.0.0.1:8080:8080"
+
+volumes:
+  pgdata:
