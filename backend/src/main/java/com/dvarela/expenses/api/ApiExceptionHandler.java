@@ -17,6 +17,7 @@ import com.dvarela.expenses.category.CategoryNotFoundException;
 import com.dvarela.expenses.expense.ExpenseConflictException;
 import com.dvarela.expenses.expense.ExpenseNotFoundException;
 import com.dvarela.expenses.expense.UnknownCategoryException;
+import com.dvarela.expenses.auth.EmailAlreadyRegisteredException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -68,5 +69,10 @@ public class ApiExceptionHandler {
     ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
         return Problems.of(HttpStatus.CONFLICT, "Data conflict",
                 "The operation conflicts with existing data.");
+    }
+
+    @ExceptionHandler(EmailAlreadyRegisteredException.class)
+    ProblemDetail handleEmailAlreadyRegistered(EmailAlreadyRegisteredException ex) {
+        return Problems.of(HttpStatus.CONFLICT, "Email already registered", ex.getMessage());
     }
 }
