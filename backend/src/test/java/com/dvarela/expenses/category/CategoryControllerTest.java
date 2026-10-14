@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import java.util.List;
 
@@ -12,14 +13,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
+import com.dvarela.expenses.auth.SecurityConfig;
 import com.dvarela.expenses.household.CurrentHousehold;
 
 @WebMvcTest(CategoryController.class)
+@Import(SecurityConfig.class)
+@WithMockUser
 class CategoryControllerTest {
 
     @Autowired
@@ -53,7 +59,7 @@ class CategoryControllerTest {
         when(categoryService.create(eq(1L), any())).thenReturn(
                 new CategoryResponse(11L, "Mascotas", CategoryKind.VARIABLE, "dog", false));
 
-        assertThat(mvc.post().uri("/api/categories")
+        assertThat(mvc.post().uri("/api/categories").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {"name": "Mascotas", "kind": "VARIABLE", "icon": "dog"}
@@ -66,7 +72,7 @@ class CategoryControllerTest {
     void create_returns409WhenTheNameIsTaken() {
         when(categoryService.create(eq(1L), any())).thenThrow(new CategoryNameTakenException("delivery"));
 
-        assertThat(mvc.post().uri("/api/categories")
+        assertThat(mvc.post().uri("/api/categories").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {"name": "delivery", "kind": "VARIABLE", "icon": "bike"}
@@ -77,7 +83,7 @@ class CategoryControllerTest {
 
     @Test
     void create_returns400WhenTheIconIsNotAllowed() {
-        assertThat(mvc.post().uri("/api/categories")
+        assertThat(mvc.post().uri("/api/categories").with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""
                     {"name": "Cohetes", "kind": "VARIABLE", "icon": "rocket"}
@@ -90,7 +96,7 @@ class CategoryControllerTest {
     void delete_returns409WhenTheCategoryHasExpenses() {
         doThrow(new CategoryInUseException(3L)).when(categoryService).delete(1L, 3L);
 
-        assertThat(mvc.delete().uri("/api/categories/3"))
+        assertThat(mvc.delete().uri("/api/categories/3").with(csrf()))
                 .hasStatus(HttpStatus.CONFLICT)
                 .bodyJson().extractingPath("$.title").isEqualTo("Category in use");
     }
@@ -100,7 +106,7 @@ class CategoryControllerTest {
         when(categoryService.archive(1L, 3L)).thenReturn(
                 new CategoryResponse(3L, "Delivery", CategoryKind.VARIABLE, "bike", true));
 
-        assertThat(mvc.post().uri("/api/categories/3/archive"))
+        assertThat(mvc.post().uri("/api/categories/3/archive").with(csrf()))
                 .hasStatusOk()
                 .bodyJson().extractingPath("$.archived").isEqualTo(true);
     }
