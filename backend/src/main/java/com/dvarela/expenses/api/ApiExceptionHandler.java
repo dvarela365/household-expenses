@@ -18,6 +18,7 @@ import com.dvarela.expenses.expense.ExpenseConflictException;
 import com.dvarela.expenses.expense.ExpenseNotFoundException;
 import com.dvarela.expenses.expense.UnknownCategoryException;
 import com.dvarela.expenses.auth.EmailAlreadyRegisteredException;
+import org.springframework.security.core.AuthenticationException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -74,5 +75,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(EmailAlreadyRegisteredException.class)
     ProblemDetail handleEmailAlreadyRegistered(EmailAlreadyRegisteredException ex) {
         return Problems.of(HttpStatus.CONFLICT, "Email already registered", ex.getMessage());
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    ProblemDetail handleAuthentication(AuthenticationException ex) {
+        return Problems.of(HttpStatus.UNAUTHORIZED, "Invalid credentials",
+                "Email or password is incorrect.");
     }
 }
