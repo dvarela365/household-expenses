@@ -20,5 +20,6 @@ public final class DefaultCategories {
                 new Category(householdId, "Hogar", CategoryKind.VARIABLE, "home"),
                 new Category(householdId, "Ocio", CategoryKind.VARIABLE, "popcorn"),
                 new Category(householdId, "Otros", CategoryKind.VARIABLE, "circle"));
+                new Category(householdId, "Salud", CategoryKind.FIXED, "heart-pulse"),
     }
 }
