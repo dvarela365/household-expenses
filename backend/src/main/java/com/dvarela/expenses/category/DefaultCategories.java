@@ -15,11 +15,10 @@ public final class DefaultCategories {
                 new Category(householdId, "Delivery", CategoryKind.VARIABLE, "bike"),
                 new Category(householdId, "Café/Kiosco", CategoryKind.VARIABLE, "coffee"),
                 new Category(householdId, "Transporte", CategoryKind.VARIABLE, "bus"),
-                new Category(householdId, "Salud", CategoryKind.VARIABLE, "heart-pulse"),
+                new Category(householdId, "Salud", CategoryKind.FIXED, "heart-pulse"),
                 new Category(householdId, "Educación", CategoryKind.FIXED, "graduation-cap"),
                 new Category(householdId, "Hogar", CategoryKind.VARIABLE, "home"),
                 new Category(householdId, "Ocio", CategoryKind.VARIABLE, "popcorn"),
                 new Category(householdId, "Otros", CategoryKind.VARIABLE, "circle"));
-                new Category(householdId, "Salud", CategoryKind.FIXED, "heart-pulse"),
     }
 }
